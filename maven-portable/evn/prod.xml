@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<portable-config>
+    <config-file path="configuration/init.properties">
+        <replace key="file.service.url">http://10.10.0.70:7090</replace>
+    </config-file>
+    <config-file path="configuration/jdbc.properties">
+        <replace key="jdbc.url">jdbc:mysql://127.0.0.1:3306/db_csie?useUnicode=true&amp;characterEncoding=UTF-8</replace>
+        <replace key="jdbc.username">root</replace>
+        <replace key="jdbc.password">Cj62602255!</replace>
+        <replace key="jdbc.url_jcom">jdbc:mysql://127.0.0.1:3306/db_csie_jcom?useUnicode=true&amp;characterEncoding=UTF-8</replace>
+        <replace key="jdbc.username_jcom">root</replace>
+        <replace key="jdbc.password_jcom">Cj62602255!</replace>
+        <replace key="hibernate.hbm2ddl.auto">none</replace>
+        <replace key="hibernate.show_sql">false</replace>
+        <replace key="hibernate.format_sql">false</replace>
+    </config-file>
+    <config-file path="configuration/jmail.properties">
+        <replace key="jmail.mail.debug">false</replace>
+    </config-file>
+    <config-file path="configuration/redis.properties">
+        <replace key="redis.host">100.114.196.167</replace>
+        <replace key="redis.port">6379</replace>
+        <replace key="redis.password">ZX678FJsdf3VFDU3234</replace>
+        <replace key="redis.database">11</replace>
+    </config-file>
+    <!--
+    <config-file path="configuration/cacheonix-config.xml">
+        <replace xpath="/cacheonix/tempDir/@path">/java/tmp/cache/cacheonix/mvae_cache</replace>
+    </config-file>
+    <config-file path="WEB-INF/classes/ehcache.xml">
+        <replace xpath="/ehcache/diskStore/@path">/java/tmp/Cache/ehcache/mvae_Cache</replace>
+    </config-file>
+    -->
+</portable-config>
