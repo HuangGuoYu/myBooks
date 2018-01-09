@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+
+    <!--
+    <bean id="stat-filter" class="com.alibaba.druid.filter.stat.StatFilter" lazy-init="true">
+        <description>druid状态过滤器</description>
+        <property name="slowSqlMillis" value="3000"/>
+        <property name="logSlowSql" value="true"/>
+        <property name="mergeSql" value="true"/>
+    </bean>
+    -->
+
+    <bean name="base_datasource" class="com.alibaba.druid.pool.xa.DruidXADataSource"
+          init-method="init" destroy-method="close" abstract="true">
+        <description>公共数据源</description>
+        <property name="initialSize" value="${jdbc.initialSize}"/>
+        <property name="maxActive" value="${jdbc.maxActive}"/>
+        <property name="minIdle" value="${jdbc.minIdle}"/>
+        <property name="maxWait" value="${jdbc.maxWait}"/>
+        <property name="testWhileIdle" value="${jdbc.testWhileIdle}"/>
+        <property name="testOnBorrow" value="${jdbc.testOnBorrow}"/>
+        <property name="testOnReturn" value="${jdbc.testOnReturn}"/>
+        <property name="validationQuery" value="${jdbc.validationQuery}"/>
+        <property name="minEvictableIdleTimeMillis" value="${jdbc.minEvictableIdleTimeMillis}"/>
+        <property name="timeBetweenEvictionRunsMillis" value="${jdbc.timeBetweenEvictionRunsMillis}"/>
+        <!--不能由druid关闭连接,否则atomikos连接会报错-->
+        <property name="removeAbandoned" value="false"/>
+        <property name="removeAbandonedTimeout" value="${jdbc.removeAbandonedTimeout}"/>
+        <property name="logAbandoned" value="${jdbc.logAbandoned}"/>
+
+        <!-- 开启Druid的监控统计功能 -->
+        <property name="filters" value="stat,wall"/>
+        <!--
+        <property name="proxyFilters">
+            <list>
+                <ref bean="stat-filter"/>
+            </list>
+        </property>
+        -->
+        <!--打印状态日志-->
+        <!--<property name="timeBetweenLogStatsMillis" value="${jdbc.timeBetweenLogStatsMillis}"/>-->
+
+        <!-- Oracle连接是获取字段注释 -->
+        <property name="connectProperties">
+            <props>
+                <prop key="remarksReporting">true</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean name="dataSource_oes" parent="base_datasource">
+        <description>在线教育服务数据源</description>
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="url" value="${jdbc.url_oes}"/>
+        <property name="username" value="${jdbc.username_oes}"/>
+        <property name="password" value="${jdbc.password_oes}"/>
+    </bean>
+
+    <bean name="dataSource_qingyun" parent="base_datasource">
+        <description>青云汇数据源</description>
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+
+    <bean name="abstractXADataSource" class="com.atomikos.jdbc.AtomikosDataSourceBean"
+          init-method="init" destroy-method="close" abstract="true">
+        <description>公共连接</description>
+        <property name="poolSize" value="10"/>
+        <!--最小连接数-->
+        <property name="minPoolSize" value="10"/>
+        <!--最大连接数-->
+        <property name="maxPoolSize" value="30"/>
+        <!--连接最大存活时间-->
+        <property name="maxLifetime" value="300000"/>
+        <!--获取连接失败重新获等待最大时间，在这个时间内如果有可用连接，将返回-->
+        <property name="borrowConnectionTimeout" value="60"/>
+        <!--最大获取数据时间，如果不设置这个值，Atomikos使用默认的5分钟，
+        那么在处理大批量数据读取的时候，一旦超过5分钟，就会抛出类似 Resultset is close 的错误.-->
+        <property name="reapTimeout" value="20000"/>
+        <!--最大空闲时间，超过最小连接池连接的连接将将关闭 -->
+        <property name="maxIdleTime" value="60"/>
+        <!--连接回收时间-->
+        <property name="maintenanceInterval" value="300"/>
+        <!--java数据库连接池，最大可等待获取datasouce的时间-->
+        <property name="loginTimeout" value="60"/>
+        <!--验证查询SQL-->
+        <!--<property name="testQuery" value="select 1"/>-->
+    </bean>
+
+    <bean name="atomikos_dataSource_oes" parent="abstractXADataSource">
+        <description>在线教育服务连接</description>
+        <property name="uniqueResourceName" value="oes"/>
+        <property name="xaDataSource" ref="dataSource_oes"/>
+    </bean>
+
+    <bean name="atomikos_dataSource_qingyun" parent="abstractXADataSource">
+        <description>青云汇连接</description>
+        <property name="uniqueResourceName" value="qingyun"/>
+        <property name="xaDataSource" ref="dataSource_qingyun"/>
+    </bean>
+
+    <!--
+    &lt;!&ndash; dataSource_c3p0数据源配置 &ndash;&gt;
+    <bean name="dataSource_c3p0" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+        <property name="driverClass" value="${jdbc.driver}"/>
+        <property name="jdbcUrl" value="${jdbc.url}"/>
+        <property name="user" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="acquireIncrement" value="${c3p0.acquireIncrement}"/>
+        <property name="initialPoolSize" value="${c3p0.initialPoolSize}"/>
+        <property name="minPoolSize" value="${c3p0.minPoolSize}"/>
+        <property name="maxPoolSize" value="${c3p0.maxPoolSize}"/>
+        <property name="maxIdleTime" value="${c3p0.maxIdleTime}"/>
+        <property name="idleConnectionTestPeriod" value="${c3p0.idleConnectionTestPeriod}"/>
+        <property name="maxStatements" value="${c3p0.maxStatements}"/>
+        <property name="numHelperThreads" value="${c3p0.numHelperThreads}"/>
+    </bean>
+    -->
+    <!--
+        &lt;!&ndash; 配置数据源工具 &ndash;&gt;
+        <bean id="dataSourceAspect" class="com.zhaoxin.common.datasource.DataSourceAspect"/>
+
+        <aop:config>
+            <aop:pointcut id="dataSourceMethods" expression="execution(* *..*Service.*(..))"/>
+
+            <aop:advisor advice-ref="dataSourceAspect" pointcut-ref="dataSourceMethods" order="1"/>
+        </aop:config>
+    -->
+
+</beans>

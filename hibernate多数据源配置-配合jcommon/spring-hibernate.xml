@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+
+    <bean name="abstractSessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean" abstract="true">
+        <description>公共SessionFactory</description>
+        <property name="hibernateProperties">
+            <props>
+                <prop key="connection.characterEncoding">UTF-8</prop>
+                <prop key="connection.useUnicode">true</prop>
+                <prop key="hibernate.dialect">${hibernate.dialect}</prop>
+                <!--<prop key="hibernate.hbm2ddl.auto">${hibernate.hbm2ddl.auto}</prop>-->
+                <prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+                <prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+                <!--
+                <prop key="hibernate.current_session_context_class">
+                    org.springframework.orm.hibernate4.SpringSessionContext
+                </prop>
+                -->
+                <!-- hibernate二级缓存
+                <prop key="hibernate.cache.region.factory_class">org.hibernate.cache.ehcache.EhCacheRegionFactory</prop>
+                <prop key="hibernate.cache.use_second_level_cache">${hibernate.cache.use_second_level_cache}</prop>
+                <prop key="hibernate.cache.use_query_cache">${hibernate.cache.use_query_cache}</prop>
+                <prop key="hibernate.cache.use_structured_entries">${hibernate.cache.use_structured_entries}</prop>
+                -->
+                <prop key="jdbc.use_scrollable_resultset">${jdbc.use_scrollable_resultset}</prop>
+                <prop key="hibernate.connection.release_mode">after_transaction</prop>
+            </props>
+        </property>
+        <!--启动事务管理-->
+        <property name="jtaTransactionManager" ref="transactionManager"/>
+    </bean>
+
+    <bean name="sessionFactory_oes" parent="abstractSessionFactory">
+        <description>在线教育服务SessionFactory</description>
+        <property name="dataSource" ref="atomikos_dataSource_oes"/>
+        <property name="packagesToScan">
+            <list>
+                <value>com.zhaoxin.common.entity</value>
+                <value>com.zhaoxin.qingyun.oes.manager.entity.dbo.sys</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean name="sessionFactory" parent="abstractSessionFactory">
+        <description>默认SessionFactory</description>
+        <property name="dataSource" ref="atomikos_dataSource_qingyun"/>
+        <property name="packagesToScan">
+            <list>
+                <value>com.zhaoxin.common.entity</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean name="sessionFactory_qingyun" parent="abstractSessionFactory">
+        <description>青云汇SessionFactory</description>
+        <property name="dataSource" ref="atomikos_dataSource_qingyun"/>
+        <property name="packagesToScan">
+            <list>
+                <value>com.zhaoxin.common.entity</value>
+            </list>
+        </property>
+    </bean>
+
+    <!-- atomikos事务管理器 -->
+    <bean name="atomikosTransactionManager"
+          class="com.atomikos.icatch.jta.UserTransactionManager"
+          init-method="init" destroy-method="close">
+        <!-- 调用终止时，强制关闭 -->
+        <property name="forceShutdown" value="true"/>
+    </bean>
+    <bean name="atomikosUserTransaction"
+          class="com.atomikos.icatch.jta.UserTransactionImp">
+        <property name="transactionTimeout" value="2000"/>
+    </bean>
+
+    <!-- spring 事务管理器 -->
+    <bean name="transactionManager"
+          class="org.springframework.transaction.jta.JtaTransactionManager">
+        <property name="transactionManager" ref="atomikosTransactionManager"/>
+        <property name="userTransaction" ref="atomikosUserTransaction"/>
+    </bean>
+
+    <!-- 使用注解事务 -->
+    <tx:annotation-driven transaction-manager="transactionManager" />
+
+</beans>
